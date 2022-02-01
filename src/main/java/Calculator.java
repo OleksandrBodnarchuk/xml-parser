@@ -1,6 +1,11 @@
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
+import org.xml.sax.Attributes;
+import org.xml.sax.SAXException;
+import org.xml.sax.helpers.DefaultHandler;
+
+import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.parsers.SAXParser;
+import javax.xml.parsers.SAXParserFactory;
+import java.io.*;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
@@ -11,17 +16,43 @@ import java.util.regex.Pattern;
 - Kalkulator powinien przyjmować kwotę w EUR i docelową walutę, zwracać kwotę w docelowej walucie.
  */
 public class Calculator {
+    private final static String FILE_NAME = "eurofxref-daily.xml";
+
     public static void main(String[] args) {
         start();
     }
 
     private static void start() {
-        Map<String, Double> dataFromUser = getDataFromUser();
+        try {
+            Map<String, Double> currencies = readDataFromXml();
+            getDataFromUser();
+        } catch (ParserConfigurationException | SAXException | IOException e) {
+            e.printStackTrace();
+        }
+
     }
 
-    private static Map<String, Double> getDataFromUser() {
-        String currency = null;
-        double amount = 0;
+    private static Map<String, Double> readDataFromXml() throws ParserConfigurationException, SAXException, IOException {
+        Map<String, Double> currencies = new HashMap<>();
+        DefaultHandler handler = new DefaultHandler() {
+            @Override
+            public void startElement(String uri, String localName, String qName, Attributes attributes) {
+                if (attributes.getLength() == 2 && attributes.getValue(0).length() == 3) {
+                    currencies.put(attributes.getValue(0), Double.valueOf(attributes.getValue(1)));
+                }
+            }
+        };
+
+        SAXParserFactory factory = SAXParserFactory.newInstance();
+        SAXParser parser = factory.newSAXParser();
+        parser.parse(new File(FILE_NAME), handler);
+
+        return currencies;
+    }
+
+    private static void getDataFromUser() {
+        String currency;
+        double amount;
         boolean flag = true;
         Map<String, Double> data = new HashMap<>();
         BufferedReader reader = null;
@@ -46,11 +77,6 @@ public class Calculator {
                 }
             }
         }
-        // check value assignment
-        if ((currency != null && !currency.isEmpty()) && amount > 0) {
-            data.put(currency, amount);
-        }
-        return data;
     }
 
     private static double readAmount(BufferedReader reader) throws IOException, NumberFormatException {

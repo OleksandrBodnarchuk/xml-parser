@@ -23,51 +23,45 @@ public class Calculator {
     }
 
     private static void start() {
-        try {
-            Map<String, Double> currencies = readDataFromXml();
-            getDataFromUser();
-        } catch (ParserConfigurationException | SAXException | IOException e) {
-            e.printStackTrace();
-        }
-
+        Map<String, Double> currencies = readDataFromXml();
+        getDataFromUser(currencies);
     }
 
-    private static Map<String, Double> readDataFromXml() throws ParserConfigurationException, SAXException, IOException {
+    private static Map<String, Double> readDataFromXml() {
         Map<String, Double> currencies = new HashMap<>();
-        DefaultHandler handler = new DefaultHandler() {
-            @Override
-            public void startElement(String uri, String localName, String qName, Attributes attributes) {
-                if (attributes.getLength() == 2 && attributes.getValue(0).length() == 3) {
-                    currencies.put(attributes.getValue(0), Double.valueOf(attributes.getValue(1)));
+        try {
+            DefaultHandler handler = new DefaultHandler() {
+                @Override
+                public void startElement(String uri, String localName, String qName, Attributes attributes) {
+                    if (attributes.getLength() == 2 && attributes.getValue(0).length() == 3) {
+                        currencies.put(attributes.getValue(0), Double.valueOf(attributes.getValue(1)));
+                    }
                 }
-            }
-        };
-
-        SAXParserFactory factory = SAXParserFactory.newInstance();
-        SAXParser parser = factory.newSAXParser();
-        parser.parse(new File(FILE_NAME), handler);
-
+            };
+            SAXParserFactory factory = SAXParserFactory.newInstance();
+            SAXParser parser = factory.newSAXParser();
+            parser.parse(new File(FILE_NAME), handler);
+        } catch (ParserConfigurationException | SAXException | IOException e) {
+            System.err.println("Error during reading from the file: " + FILE_NAME);
+        }
         return currencies;
     }
 
-    private static void getDataFromUser() {
-        String currency;
-        double amount;
+    private static void getDataFromUser(Map<String, Double> currencies) {
+        String currency = null;
+        double amount = 0;
         boolean flag = true;
-        Map<String, Double> data = new HashMap<>();
         BufferedReader reader = null;
         try {
             reader = new BufferedReader(new InputStreamReader(System.in));
             while (flag) {
-                currency = readCurrency(reader);
-                printLine("Enter amount to convert: ");
+                currency = readCurrency(reader, currencies);
                 amount = readAmount(reader);
-                printLine(currency + " amount: " + amount);
                 flag = false;
             }
         } catch (IOException | NumberFormatException e) { // handle NumberFormatException message.
             System.out.println(e.getMessage());
-            getDataFromUser();
+            getDataFromUser(currencies);
         } finally {
             if (reader != null) {
                 try {
@@ -77,9 +71,18 @@ public class Calculator {
                 }
             }
         }
+
+        calculate(amount, currency, currencies);
+    }
+
+    private static void calculate(double amount, String currency, Map<String, Double> currencies) {
+        double targetAmount = currencies.get(currency);
+        double result = targetAmount * amount;
+        printLine(String.format("%.2f %s is equal to %.2f %s", amount, "EUR", result, currency));
     }
 
     private static double readAmount(BufferedReader reader) throws IOException, NumberFormatException {
+        printLine("Enter target amount: ");
         double amount = Double.parseDouble(reader.readLine().trim());
         if (amount > 0) {
             return amount;
@@ -88,10 +91,11 @@ public class Calculator {
         }
     }
 
-    private static String readCurrency(BufferedReader reader) throws IOException {
-        printLine("Enter target currency (in format: USD|PLN|IDR etc.): ");
+    private static String readCurrency(BufferedReader reader, Map<String, Double> currencies) throws IOException {
+        printLine("Target currency (exmpl.: USD|PLN|IDR etc.): ");
         String currency = reader.readLine().toUpperCase(Locale.ROOT).trim();
-        if (currency.length() == 3 && Pattern.matches("[a-zA-Z]+", currency)) {
+        if ((currency.length() == 3 && Pattern.matches("[a-zA-Z]+", currency))
+                && currencies.containsKey(currency)) {
             return currency;
         } else {
             throw new IOException("Wrong currency code");

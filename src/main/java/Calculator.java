@@ -27,12 +27,14 @@ public class Calculator {
         getDataFromUser(currencies);
     }
 
+    // Reads data from XML file with SAX
     private static Map<String, Double> readDataFromXml() {
         Map<String, Double> currencies = new HashMap<>();
         try {
             DefaultHandler handler = new DefaultHandler() {
                 @Override
                 public void startElement(String uri, String localName, String qName, Attributes attributes) {
+                    // checks if element has 2 attributes and if "currency" length is in international code https://taxsummaries.pwc.com/glossary/currency-codes
                     if (attributes.getLength() == 2 && attributes.getValue(0).length() == 3) {
                         currencies.put(attributes.getValue(0), Double.valueOf(attributes.getValue(1)));
                     }
@@ -47,16 +49,15 @@ public class Calculator {
         return currencies;
     }
 
+    // Gets data from user
     private static void getDataFromUser(Map<String, Double> currencies) {
-        String currency;
-        double amount;
         boolean flag = true;
         BufferedReader reader = null;
         try {
             reader = new BufferedReader(new InputStreamReader(System.in));
-            while (flag) {
-                currency = readCurrency(reader, currencies);
-                amount = readAmount(reader);
+            while (flag) { // loop in case errors
+                String currency = readCurrency(reader, currencies); // get & check currency with XML
+                double amount = readAmount(reader); // get and check amount
                 calculate(amount, currency, currencies);
                 flag = false;
             }
@@ -74,6 +75,7 @@ public class Calculator {
         }
     }
 
+    // final calculations
     private static void calculate(double amount, String currency, Map<String, Double> currencies) {
         double targetAmount = currencies.get(currency);
         double result = targetAmount * amount;
@@ -83,7 +85,7 @@ public class Calculator {
     private static double readAmount(BufferedReader reader) throws IOException, NumberFormatException {
         printLine("Enter target amount: ");
         double amount = Double.parseDouble(reader.readLine().trim());
-        if (amount > 0) {
+        if (amount > 0) { // target amount always > 0
             return amount;
         } else {
             throw new IOException("Wrong amount");
@@ -94,7 +96,7 @@ public class Calculator {
         printLine("Target currency (exmpl.: USD|PLN|IDR etc.): ");
         String currency = reader.readLine().toUpperCase(Locale.ROOT).trim();
         if ((currency.length() == 3 && Pattern.matches("[a-zA-Z]+", currency))
-                && currencies.containsKey(currency)) {
+                && currencies.containsKey(currency)) { // checks user input + with XML
             return currency;
         } else {
             throw new IOException("Wrong currency code");

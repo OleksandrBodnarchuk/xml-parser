@@ -48,8 +48,8 @@ public class Calculator {
     }
 
     private static void getDataFromUser(Map<String, Double> currencies) {
-        String currency = null;
-        double amount = 0;
+        String currency;
+        double amount;
         boolean flag = true;
         BufferedReader reader = null;
         try {
@@ -57,9 +57,10 @@ public class Calculator {
             while (flag) {
                 currency = readCurrency(reader, currencies);
                 amount = readAmount(reader);
+                calculate(amount, currency, currencies);
                 flag = false;
             }
-        } catch (IOException | NumberFormatException e) { // handle NumberFormatException message.
+        } catch (IOException | NumberFormatException e) {
             System.out.println(e.getMessage());
             getDataFromUser(currencies);
         } finally {
@@ -71,8 +72,6 @@ public class Calculator {
                 }
             }
         }
-
-        calculate(amount, currency, currencies);
     }
 
     private static void calculate(double amount, String currency, Map<String, Double> currencies) {

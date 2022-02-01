@@ -6,6 +6,8 @@ import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;
 import java.io.*;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
@@ -16,7 +18,8 @@ import java.util.regex.Pattern;
 - Kalkulator powinien przyjmować kwotę w EUR i docelową walutę, zwracać kwotę w docelowej walucie.
  */
 public class Calculator {
-    private final static String FILE_NAME = "eurofxref-daily.xml";
+    private final static Path currentWorkingDir = Paths.get("").toAbsolutePath();
+    private final static String FILE_NAME = currentWorkingDir.normalize() + "\\eurofxref-daily.xml";
 
     public static void main(String[] args) {
         start();
